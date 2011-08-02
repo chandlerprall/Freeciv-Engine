@@ -1,6 +1,14 @@
 (function() {
 	
-	/** VERTEX POINTS **/
+	/*
+	Lattice point functions, ported from Python code found on
+	http://en.literateprograms.org/Generating_all_integer_lattice_points_(Python)
+	
+	Usage:
+	findLattices(radius, origin)
+	where radius is the radius of the circle
+	and origin is the point of the circle's center
+	*/
 	var findLattices = (function() {
 		function distance(x, y) {
 			return Math.pow(x, 2) + Math.pow(y, 2);
@@ -70,20 +78,29 @@
 		
 	})();
 	
-	/** CONFIG **/
-	var plots_x = 49;
-	var plots_y = 49;
-	var map_quality = 1;
-	var water_quality = 1;
 	
+	/** Configuration variables **/
+	var plots_x = 49; // # of tiles along X axis
+	var plots_y = 49; // # of tiles along Y axis
+	var map_quality = 1; // Determines how detailed map tiles are, overridden on startup
+	var water_quality = 1; // Determines how detailed shorelines are, overridden on startup
+	
+	
+	// Dictionary of texture objects
 	var textures = {
 		ground: THREE.ImageUtils.loadTexture('textures_ground.png'),
 		sky: THREE.ImageUtils.loadTexture('texture_sky_clouds.jpg')
 	}
 	
+	
+	/*
+	TerrainBuilder object; used to create new and manipulate existing terrain features
+	*/
 	var TerrainBuilder = {
 		
 		utils: {
+			// getFaceCount
+			// returns how many polygons (faces) a tile is constructed of
 			getFaceCount: function( tile_type ) {
 				switch( tile_type ) {
 					case 0:
@@ -98,6 +115,9 @@
 				}
 			},
 			
+			// mergeEdge
+			// takes an array of points along an edge and merges it to match
+			// an array of points along a second edge
 			mergeEdge: function( edge, to ) {
 				var vertex_step, edge_position, vertex_index, vertex_offset, height_delta, i;
 				
@@ -127,6 +147,9 @@
 				
 			},
 			
+			// mergeEdges
+			// takes an array of points representing the heightmap of a terrain and
+			// blends the heightmap with the tile's neighboring terrain
 			mergeEdges: function( heightmap, neighbors ) {
 				
 				var my_faces, my_edge, neighbor_faces, neighbor_edge, i;
@@ -318,6 +341,7 @@
 			}
 		},
 		
+		// Generates mountainous terrain
 		Mountain: function() {
 			
 			var faces = TerrainBuilder.utils.getFaceCount(TileTypes.MOUNTAINS);
@@ -336,6 +360,7 @@
 			return heightmap;
 		},
 		
+		// Generates water terrain
 		Ocean: function(tile) {
 			
 			var faces = TerrainBuilder.utils.getFaceCount(TileTypes.OCEAN)
@@ -348,8 +373,12 @@
 			for (var x = 0; x <= faces; x++) {
 				for (var y = 0; y <= faces; y++) {
 					
-					heightmap[x + ((faces+1) * y)] = 0;
+					heightmap[x + ((faces+1) * y)] = 0; // Default every point's height to 0
 					
+					// The next 8 if..else if statements determine if the point's height should
+					// be adjusted to become water. The rule being followed is:
+					// if the vertex is along an edge and the next tile over isn't water, no elevation change.
+					// This keeps all of the negative elevation points within the water's piece
 					if (x === 0 && y === 0 && tile.cache.neighbors[4].type !== TileTypes.OCEAN) { // Top Left
 					} else if (x === faces && y === 0 && tile.cache.neighbors[5].type !== TileTypes.OCEAN) { // Top Right
 					} else if (x === faces && y == faces && tile.cache.neighbors[6].type !== TileTypes.OCEAN) { // Bottom Right
@@ -360,7 +389,7 @@
 					} else if (x === 0 && tile.cache.neighbors[3].type !== TileTypes.OCEAN) { // Left
 					} else {
 						
-						var distance;
+						var distance; // How far the vertex is from the tile's edge. The further away, the deeper the water
 						
 						if (y <= faces / 2 && tile.cache.neighbors[0].type === TileTypes.OCEAN) { // Water to the top
 							
@@ -425,20 +454,8 @@
 						}
 						
 						// Adjust terrain height
-						if (
-							y === 0 // Top
-							||
-							x === faces // Right
-							||
-							y === faces // Bottom
-							||
-							x === 0 // Left
-						) {
-							heightmap[x + ((faces+1) * y)] = distance * -.4;
-						} else {
-							heightmap[x + ((faces+1) * y)] = distance * -.4 + (noise_map[y + ((faces+1) * x)] * .2);
-						}
-						if (heightmap[x + ((faces+1) * y)] > 0.0) {
+						heightmap[x + ((faces+1) * y)] = distance * -.4 + (noise_map[y + ((faces+1) * x)] * .2); // Apply noisemap
+						if (heightmap[x + ((faces+1) * y)] > 0.0) { // don't let any point be much above 0 elevation (with the distance calculation, this happens in the corners)
 							heightmap[x + ((faces+1) * y)] *= .05;
 						}
 						
@@ -450,6 +467,7 @@
 			return heightmap;
 		},
 		
+		// Any other type of tile
 		Base: function() {
 			
 			var faces = TerrainBuilder.utils.getFaceCount(TileTypes.PLAINS)
@@ -469,6 +487,8 @@
 		
 	};
 	
+	
+	// CONSTants dictionary of tile types
 	var TileTypes = {
 		PLAINS: 0,
 		MOUNTAINS: 1,
@@ -476,6 +496,8 @@
 		OCEAN: 3
 	}
 	
+	
+	// Tile object definition
 	var Tile = function(coordinates) {
 		this.coordinates = coordinates;
 		this.state = 0; // 0 = no tile, 1 = tile placed, 2 = tile explored but hidden
@@ -484,11 +506,11 @@
 		
 		this.cache = {};
 		
-		this.hidden = { type: 'i', value: 0 };
-	
-		this.create = function create() {
+		this.hidden = { type: 'i', value: 0 }; // Determines if tile is hidden by fog-of-war
+		
+		this.create = function create() { // Creates/initializes the tile
 			if (typeof this.cache.neighbors === 'undefined') {
-				this.cache.neighbors = [];
+				this.cache.neighbors = []; // Holds references to each of the tile's 8 neighboring tiles
 				this.cache.neighbors.push(this.coordinates.y > 0 ? window.map.grid[this.coordinates.x][this.coordinates.y - 1] : {type: -1}); // top
 				this.cache.neighbors.push(this.coordinates.x < plots_x-1 ? window.map.grid[this.coordinates.x + 1][this.coordinates.y] : {type: -1}); // right
 				this.cache.neighbors.push(this.coordinates.y < plots_y-1 ? window.map.grid[this.coordinates.x][this.coordinates.y + 1] : {type: -1}); // bottom
@@ -504,6 +526,7 @@
 				this.cache.seed = { type: 'f', value: Math.floor(Math.random() * 100000) };
 			}
 			
+			// Build the tile's terrain geometry
 			switch (this.type) {
 				
 				case TileTypes.MOUNTAINS:
@@ -568,22 +591,13 @@
 				
 			}
 			
+			// Merge the tile's edges with any of the surrounding terrain
 			this.cache.heightmap = TerrainBuilder.utils.mergeEdges(this.cache.heightmap, this.cache.neighbors);
 			for (var i = 0; i < geometry.vertices.length; i++) {
 				geometry.vertices[i].position.z = this.cache.heightmap[i];
 			}
 			
-			var texture;
-			if (this.type === TileTypes.PLAINS) {
-				texture = textures.plains;
-			} else if (this.type === TileTypes.MOUNTAINS) {
-				texture = textures.mountains;
-			} else if (this.type === TileTypes.SNOW) {
-				texture = textures.snow;
-			} else if (this.type === TileTypes.OCEAN) {
-				texture = textures.ocean;
-			}
-			
+			// Create the tile's WebGL mesh object
 			this.mesh = new THREE.Mesh(
 				geometry,
 				new THREE.MeshShaderMaterial({
@@ -591,7 +605,6 @@
 						seed: this.cache.seed,
 						type: { type: 'f', value: this.type },
 						hidden: this.hidden,
-						texture: { type: 't', value: 0, texture: texture },
 						textures: { type: 't', value: 5, texture: textures.ground },
 						neighbors: { type: 'fv1', value: [this.cache.neighbors[0].type, this.cache.neighbors[1].type, this.cache.neighbors[2].type, this.cache.neighbors[3].type, this.cache.neighbors[4].type, this.cache.neighbors[5].type, this.cache.neighbors[6].type, this.cache.neighbors[7].type] }
 					},
@@ -601,7 +614,7 @@
 			);
 			this.mesh.rotation.x = Degrees2Radians(-90);
 			
-			
+			// If this is a water piece create the water object
 			if (this.type === TileTypes.OCEAN) {
 				this.mesh.water = new THREE.Mesh(
 					new THREE.PlaneGeometry(1, 1, TerrainBuilder.utils.getFaceCount(TileTypes.OCEAN), TerrainBuilder.utils.getFaceCount(TileTypes.OCEAN)),
@@ -631,8 +644,9 @@
 			
 			
 			return this.mesh;
-		}
+		};
 		
+		// Removes tile from the WebGL scene
 		this.remove = function(scene) {
 			this.state = 2;
 			
@@ -646,13 +660,19 @@
 		};
 	}
 	
+	
+	// mapinit
+	// Initializes WebGL, scene, and map
 	var is_init = false;
 	mapinit = function() {
 		if (is_init) return false;
 		is_init = true;
+		
+		// Set map & water quality values
 		map_quality = +document.getElementById('map_quality').value;
 		water_quality = +document.getElementById('water_quality').value;
 		
+		// Create the WebGL objects
 		var renderer = new THREE.WebGLRenderer({antialias: true});
 		renderer.sortObjects = false;
 		renderer.setSize(1024, 768);
@@ -669,12 +689,14 @@
 			10000
 		);
 		
-		// Create the land
+		// Map object
 		var map = {
-			visible_tiles: [],
-			grid: [],
-			time_uniform: { type: 'f', value: 0 },
+			visible_tiles: [], // Array of all visible tiles
+			grid: [], // array[x][y] of all tiles
+			time_uniform: { type: 'f', value: 0 }, // any animated shader uses this uniform to get the time
 			
+			// fogify
+			// places fog-of-war on tiles
 			fogify: function() {
 				for (var x = 0; x < this.grid.length; x++) {
 					for (var y = 0; y < this.grid[x].length; y++) {
@@ -685,6 +707,8 @@
 				}
 			},
 			
+			// reveal
+			// Reveals a tile either by creating it or un-hiding it
 			reveal: function(coordinates) {
 				if (coordinates.x >= 0 && coordinates.x < plots_x && coordinates.y >= 0 && coordinates.y < plots_y) {
 					if (map.grid[coordinates.x][coordinates.y].state === 0) {
@@ -703,6 +727,8 @@
 				}
 			},
 			
+			// revealLOS
+			// reveals all tiles around the tile at `coordinates`
 			revealLOS: function(coordinates) {
 				var visible_tiles = findLattices(1.6, coordinates);
 				var tile_coordinates;
@@ -711,6 +737,9 @@
 				}
 			},
 			
+			// screen
+			// [hopeful] performance-gain function
+			// hides/shows tiles as needed based on where the camera is at
 			screen: function(remove) {
 				var screen_bounds = {
 					from: {
@@ -797,30 +826,35 @@
 		};
 		marker.mesh.position.set(Math.floor(plots_x / 2), .15, Math.floor(plots_y / 2));
 		scene.addChild(marker.mesh);
-		marker.move(0, 0);
+		marker.move(0, 0); // Call to `move` function initializes starting tiles
 		
-		/** KEYBOARD **/
+		
+		/** Keyboard Hooks **/
 		window.onkeydown = function onkeydown(e) {
 			switch (e.keyCode) {
-				case 37:
+				case 37: // Left array
 					marker.move(-1, 0);
 					break;
-				case 38:
+				case 38: // Up arrow
 					marker.move(0, -1);
 					break;
-				case 39:
+				case 39: // Right arrow
 					marker.move(1, 0);
 					break;
-				case 40:
+				case 40: // Down arrow
 					marker.move(0, 1);
 					break;
 			}
 		};
 		
+		// render
+		// Renders the scene
 		var render = function render() {
 			renderer.render(scene, camera);
 		};
 		
+		// main
+		// Main program loop
 		var main = function main() {
 			
 			window.map.time_uniform.value = new Date().getTime() % 1000000;
@@ -833,6 +867,7 @@
 			
 		};
 		
+		// Initialize stats element
 		stats = new Stats();
 		stats.domElement.style.position = 'absolute';
 		stats.domElement.style.top = '0';

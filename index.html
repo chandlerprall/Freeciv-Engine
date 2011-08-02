@@ -45,24 +45,13 @@
 		uv.x = mod(mod((uv.x / (1.0 / repeat)), repeat), 1.0);
 		uv.y = mod(mod((uv.y / (1.0 / repeat)), repeat), 1.0);
 		
+		// To prevent other textures from blending into this one
 		uv.x = (uv.x * .6) + .2;
 		uv.y = (uv.y * .6) + .2;
-		
-		//if (uv.x >= .8) {
-		//	uv.x = .9;
-		//}
-		
-		/* TODO: make this not needed */
-		/*
-		uv.x = uv.x * .6 + .2;
-		uv.y = uv.y * .6 + .2;
-		*/
 		
 		/* Find offsets */
 		float tile_x = mod(type, tiles_per_row) * tile_size;
 		float tile_y = floor(type / tiles_per_row) * tile_size;
-		
-		//return vec3(uv.x, 0.0, 0.0);
 		
 		/* Apply offsets */
 		uv.x = tile_x + clamp((uv.x * tile_size), 0.0, 1.0);
@@ -122,100 +111,6 @@
 			fragcolor,
 			min(abs(( -.3 - (0.0 - vPosition.z)) * 5.0), 1.0)
 		);
-
-		/*
-		vec3 fragcolor = get_terrain( type, vUv );
-		
-		// special blending
-		
-		if (type == 0.0 ) { // Plains
-			
-			
-			
-		} if (type == 1.0) { // Mountains
-			
-			// Elevation
-			float min_snowcap_height = .1;
-			fragcolor = blend_terrain(2.0, fragcolor, min(max(vPosition.z - min_snowcap_height, 0.0) * 10.0, 1.0));
-			
-		}
-		
-		vec3 border_color;
-		
-		float color_falloff = .2;
-		float color_falloff_diag = sqrt(pow(color_falloff, 2.0) * 2.0);
-		
-		if (neighbors[0] != -1.0) {
-			// Top blending
-			if (vUv.y <= color_falloff) {
-				fragcolor = blend_terrain(neighbors[0], fragcolor, (1.0 - (vUv.y / color_falloff)) / 2.0);
-			}
-		}
-		
-		if (neighbors[1] != -1.0) {
-			// Right blending
-			if (vUv.x >= 1.0 - color_falloff) {
-				fragcolor = blend_terrain(neighbors[1], fragcolor, ((vUv.x - (1.0 - color_falloff)) / color_falloff) / 2.0);
-			}
-		}
-		
-		if (neighbors[2] != -1.0) {
-			// Bottom blending
-			if (vUv.y >= 1.0 - color_falloff) {
-				fragcolor = blend_terrain(neighbors[2], fragcolor, ((vUv.y - (1.0 - color_falloff)) / color_falloff) / 2.0);
-			}
-		}
-		
-		if (neighbors[3] != -1.0) {
-			// Left blending
-			if (vUv.x <= color_falloff) {
-				fragcolor = blend_terrain(neighbors[3], fragcolor, (1.0 - (vUv.x / color_falloff)) / 2.0);
-			}
-		}
-		
-		if (neighbors[4] != -1.0) {
-			// Top-Left blending
-			float distance = sqrt(pow(vUv.x, 2.0) + pow(vUv.y, 2.0));
-			if (distance < color_falloff_diag) {
-				fragcolor = blend_terrain(neighbors[4], fragcolor, (1.0 - (distance / color_falloff_diag)) / 5.0);
-			}
-		}
-		
-		if (neighbors[5] != -1.0) {
-			// Top-Right blending
-			float distance = sqrt(pow(1.0 - vUv.x, 2.0) + pow(vUv.y, 2.0));
-			if (distance < color_falloff_diag) {
-				fragcolor = blend_terrain(neighbors[5], fragcolor, (1.0 - (distance / color_falloff_diag)) / 5.0);
-			}
-		}
-		
-		if (neighbors[6] != -1.0) {
-			// Bottom-Right blending
-			float distance = sqrt(pow(1.0 - vUv.x, 2.0) + pow(1.0 - vUv.y, 2.0));
-			if (distance < color_falloff_diag) {
-				fragcolor = blend_terrain(neighbors[6], fragcolor, (1.0 - (distance / color_falloff_diag)) / 5.0);
-			}
-		}
-		
-		if (neighbors[7] != -1.0) {
-			// Bottom-Left blending
-			float distance = sqrt(pow(vUv.x, 2.0) + pow(1.0 - vUv.y, 2.0));
-			if (distance < color_falloff_diag) {
-				fragcolor = blend_terrain(neighbors[7], fragcolor, (1.0 - (distance / color_falloff_diag)) / 5.0);
-			}
-		}
-		
-		if (vPosition.z <= -.001) {
-			fragcolor.r += vPosition.z * .8;
-			fragcolor.g += vPosition.z * .6;
-			
-			if (vPosition.z >= -.09) {
-				fragcolor.g += ((.09 - (-.001 - vPosition.z)) / .09) * .05;
-				fragcolor.b += ((.09 - (-.001 - vPosition.z)) / .09) * .01;
-				fragcolor.r += ((.09 - (-.001 - vPosition.z)) / .09) * .01;
-			}
-		}
-		*/
 		
 		gl_FragColor = vec4(fragcolor, 1.0);
 		if (hidden == 1) {
@@ -246,11 +141,6 @@
 		vPosition = position;
 		vPosition.z = 0.0;
 		vHeightmap = heightmap;
-		
-		/*
-		float modu = mod(sin(uv.x) + cos(radians(uv.y)), time / 10000000.0) * cos(uv.x) * sin(uv.y) / 20.0;
-		vPosition.z -= (sin(radians(time / 4.0)) + 1.0) * modu;
-		*/
 		
 		gl_Position = projectionMatrix * modelViewMatrix * vec4(vPosition, 1);
 		
