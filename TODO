@@ -1,9 +1,10 @@
 TODO for Freeciv-Engine:
 
-- Improve visual realism by using bumpmaps and heightmaps in WebGL.
-- Fix performance issue when many tiles are rendered.
+- Improve visual realism by using bumpmaps in WebGL.
+- Fix scrolling performance issue when many tiles are rendered.
+- Create blender models
 - Import blender models for units and cities.
-- Add billboards for some terrain types.
+- Add vegetation billboards.
 - Zoom in and out. Zoom the map out a bit by default.
 - Smooth looking fog-of-war.
 - Integration between Freeciv-Engine and the Freeciv.net game engine.

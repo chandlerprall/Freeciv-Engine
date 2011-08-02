@@ -532,13 +532,13 @@
 				case TileTypes.MOUNTAINS:
 					var geometry = new THREE.PlaneGeometry( 1, 1, TerrainBuilder.utils.getFaceCount(TileTypes.MOUNTAINS), TerrainBuilder.utils.getFaceCount(TileTypes.MOUNTAINS) );
 					
-					if (typeof this.cache.heightmap === 'undefined') {
+					//if (typeof this.cache.heightmap === 'undefined') {
 						
 						this.cache.heightmap = TerrainBuilder.Mountain(this);
 						for (var i = 0; i < geometry.vertices.length; i++) {
 							geometry.vertices[i].position.z = this.cache.heightmap[i];
 						}
-						
+					/*	
 					} else {
 						
 						for (var i = 0; i < geometry.vertices.length; i++) {
@@ -546,20 +546,20 @@
 						}
 						
 					}
-					
+					*/
 					break;
 					
 				case TileTypes.OCEAN:
 					
 					var geometry = new THREE.PlaneGeometry( 1, 1, TerrainBuilder.utils.getFaceCount(TileTypes.OCEAN), TerrainBuilder.utils.getFaceCount(TileTypes.OCEAN) );
 					
-					if (typeof this.cache.heightmap === 'undefined') {
+					//if (typeof this.cache.heightmap === 'undefined') {
 						
 						this.cache.heightmap = TerrainBuilder.Ocean(this);
 						for (var i = 0; i < geometry.vertices.length; i++) {
 							geometry.vertices[i].position.z = this.cache.heightmap[i];
 						}
-						
+					/*	
 					} else {
 						
 						for (var i = 0; i < geometry.vertices.length; i++) {
@@ -567,19 +567,19 @@
 						}
 						
 					}
-					
+					*/
 					break;
 				
 				default:
 					var geometry = new THREE.PlaneGeometry( 1, 1, TerrainBuilder.utils.getFaceCount(this.type), TerrainBuilder.utils.getFaceCount(this.type) );
 					
-					if (typeof this.cache.heightmap === 'undefined') {
+					//if (typeof this.cache.heightmap === 'undefined') {
 						
 						this.cache.heightmap = TerrainBuilder.Base(this);
 						for (var i = 0; i < geometry.vertices.length; i++) {
 							geometry.vertices[i].position.z = this.cache.heightmap[i];
 						}
-						
+					/*
 					} else {
 						
 						for (var i = 0; i < geometry.vertices.length; i++) {
@@ -587,6 +587,7 @@
 						}
 						
 					}
+					*/
 					break;
 				
 			}
@@ -640,8 +641,6 @@
 				this.mesh.water.matrixAutoUpdate = false;;
 				this.mesh.addChild(this.mesh.water);
 			}
-			
-			
 			
 			return this.mesh;
 		};
@@ -740,6 +739,8 @@
 			// screen
 			// [hopeful] performance-gain function
 			// hides/shows tiles as needed based on where the camera is at
+			/*
+			** REMOVED as it adds more performance cost at the moment **
 			screen: function(remove) {
 				var screen_bounds = {
 					from: {
@@ -783,6 +784,7 @@
 					}
 				}
 			}
+			*/
 		};
 		
 		for (var x = 0; x < plots_x; x++) {
@@ -860,7 +862,7 @@
 			window.map.time_uniform.value = new Date().getTime() % 1000000;
 			
 			render();
-			map.screen(true);
+			//map.screen(true);
 			stats.update();
 			
 			window.requestAnimFrame(main);
