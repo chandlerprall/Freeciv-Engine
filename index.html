@@ -6,8 +6,6 @@
 
 <script id="groundVertexShader" type="x-shader/x-fragment">
 	
-	uniform float neighbors[8];
-	
 	varying vec2 vUv;
 	varying vec3 vPosition;
 	
@@ -28,8 +26,6 @@
 	uniform float seed;
 	
 	uniform sampler2D textures;
-	
-	uniform float neighbors[8];
 	
 	varying vec2 vUv;
 	varying vec3 vPosition;
@@ -126,7 +122,6 @@
 
 <script id="waterVertexShader" type="x-shader/x-fragment">
 	
-	uniform float neighbors[8];
 	uniform float time;
 	
 	attribute float heightmap;

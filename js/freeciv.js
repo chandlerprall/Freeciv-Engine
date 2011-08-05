@@ -606,8 +606,7 @@
 						seed: this.cache.seed,
 						type: { type: 'f', value: this.type },
 						hidden: this.hidden,
-						textures: { type: 't', value: 5, texture: textures.ground },
-						neighbors: { type: 'fv1', value: [this.cache.neighbors[0].type, this.cache.neighbors[1].type, this.cache.neighbors[2].type, this.cache.neighbors[3].type, this.cache.neighbors[4].type, this.cache.neighbors[5].type, this.cache.neighbors[6].type, this.cache.neighbors[7].type] }
+						textures: { type: 't', value: 5, texture: textures.ground }
 					},
 					vertexShader: document.getElementById( 'groundVertexShader' ).textContent,
 					fragmentShader: document.getElementById( 'groundFragmentShader' ).textContent
